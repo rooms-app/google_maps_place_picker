@@ -64,6 +64,7 @@ class PlacePicker extends StatefulWidget {
     this.automaticallyImplyAppBarLeading = true,
     this.autocompleteOnTrailingWhitespace = false,
     this.hidePlaceDetailsWhenDraggingPin = true,
+    this.radiusInMeters,
   }) : super(key: key);
 
   final String apiKey;
@@ -101,6 +102,7 @@ class PlacePicker extends StatefulWidget {
   final List<Component>? autocompleteComponents;
   final bool? strictbounds;
   final String? region;
+  final int? radiusInMeters;
 
   /// If true the [body] and the scaffold's floating widgets should size
   /// themselves to avoid the onscreen keyboard whose height is defined by the
@@ -337,6 +339,7 @@ class _PlacePickerState extends State<PlacePicker> {
         provider!.selectedPlace!.geometry!.location.lng);
 
     provider!.placeSearchingState = SearchingState.Idle;
+    widget.onPlaceHighlighted!(provider!.selectedPlace!);
   }
 
   _moveTo(double latitude, double longitude) async {
@@ -367,7 +370,7 @@ class _PlacePickerState extends State<PlacePicker> {
               .updateCurrentLocation(widget.forceAndroidLocationManager),
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildMap(widget.initialPosition);
             } else {
               if (provider!.currentPosition == null) {
                 return _buildMap(widget.initialPosition);
@@ -381,11 +384,7 @@ class _PlacePickerState extends State<PlacePicker> {
       return FutureBuilder(
         future: Future.delayed(Duration(milliseconds: 1)),
         builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else {
-            return _buildMap(widget.initialPosition);
-          }
+          return _buildMap(widget.initialPosition);
         },
       );
     }
@@ -409,6 +408,7 @@ class _PlacePickerState extends State<PlacePicker> {
       language: widget.autocompleteLanguage,
       forceSearchOnZoomChanged: widget.forceSearchOnZoomChanged,
       hidePlaceDetailsWhenDraggingPin: widget.hidePlaceDetailsWhenDraggingPin,
+      radiusInMeters: widget.radiusInMeters,
       onToggleMapType: () {
         provider!.switchMapType();
       },

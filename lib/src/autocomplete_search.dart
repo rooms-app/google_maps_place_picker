@@ -98,15 +98,24 @@ class AutoCompleteSearchState extends State<AutoCompleteSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: provider,
-      child: widget.headerBuilder(
-        Container(
-            height: widget.height,
-            decoration: widget.searchWidgetDecoration,
-            child: _buildSearchTextField()),
-      ),
-    );
+    return FutureBuilder(future: (() async {
+      if (widget.initialSearchString != null) {
+        WidgetsBinding.instance!.addPostFrameCallback((_) {
+          controller.text = widget.initialSearchString!;
+          print('changed');
+        });
+      }
+    })(), builder: (context, snap) {
+      return ChangeNotifierProvider.value(
+        value: provider,
+        child: widget.headerBuilder(
+          Container(
+              height: widget.height,
+              decoration: widget.searchWidgetDecoration,
+              child: _buildSearchTextField()),
+        ),
+      );
+    });
   }
 
   Widget _buildSearchTextField() {
@@ -150,7 +159,9 @@ class AutoCompleteSearchState extends State<AutoCompleteSearch> {
 
     if (controller.text.isEmpty) {
       provider.debounceTimer?.cancel();
-      _searchPlace(controller.text);
+      if (focus.hasFocus) {
+        _searchPlace(controller.text);
+      }
       return;
     }
 
@@ -171,7 +182,9 @@ class AutoCompleteSearchState extends State<AutoCompleteSearch> {
 
     provider.debounceTimer =
         Timer(Duration(milliseconds: widget.debounceMilliseconds!), () {
-      _searchPlace(controller.text.trim());
+      if (focus.hasFocus) {
+        _searchPlace(controller.text.trim());
+      }
     });
   }
 
@@ -180,6 +193,13 @@ class AutoCompleteSearchState extends State<AutoCompleteSearch> {
     provider.isSearchBarFocused = focus.hasFocus;
     provider.debounceTimer?.cancel();
     provider.placeSearchingState = SearchingState.Idle;
+    if (focus.hasFocus) {
+      print('has fo');
+      _searchPlace(controller.text.trim());
+    } else {
+      print('no f');
+      _clearOverlay();
+    }
   }
 
   _searchPlace(String searchTerm) {
